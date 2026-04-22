@@ -1,27 +1,31 @@
 import requests # This is like Talend, but in code
+from bs4 import BeautifulSoup # This is the "Scanner"
 
-# The URL of the Java API
-API_URL = "http://localhost:8080/courses"
+def scrape_and_send():
+    # 1. We "visit" a page. (I'm using a placeholder here)
+    # In a real scenario, this would be the ÉTS grade page
+    url = "https://web-scraping.dev/products"
+    response = requests.get(url)
 
-def send_course_to_java(name, grade):
-    data = {
-        "name": name,
-        "grade": grade
-    }
-    # Like in Talend
-    response = requests.post(API_URL, json=data)
+    # 2. We turn the raw HTML into a "Searchable" object
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-    if response.status_code == 200 or response.status_code == 201:
-        print(f"Successfully sent {name} to Java!")
-    else:
-        print(f"Failed! Code: {response.status_code}")
+    # 3. We find all the "Items" on the page
+    # Pretending each product is a 'Course' for now
+    products = soup.find_all("div", class_="product-card")
 
-# Pretending we scraped these from the ÉTS portal
-mock_data = [
-    {"name": "MAT145", "grade": 77.0},
-    {"name": "INF111", "grade": 91.0},
-    {"name": "LOG100", "grade": 84.5}
-]
+    for item in products:
+        # We extract the text from the HTML page
+        name = item.find("h3").text.strip()
+        price_text = item.find("span", class_="price").text.strip()
 
-for course in mock_data:
-    send_course_to_java(course['name'], course['grade'])
+        # We clean the data (just like a real engineer)
+        # We remove '$' and turn it into a number
+        grade = float(price_text.replace('$', ''))
+
+        # 4. We send it to our Java API!
+        payload = {"name": name, "grade": grade}
+        requests.post("http://localhost:8080/courses", json=payload)
+        print(f"Scraped and sent: {name}")
+
+scrape_and_send()
